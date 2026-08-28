@@ -53,7 +53,7 @@ export default function HisabScreen() {
       setPrinting(true);
       const html = buildHisabInvoiceHtml({
         org: org.data ?? organization,
-        orgFallbackName: organization?.name || 'Khamar',
+        orgFallbackName: organization?.name || 'Khamar Manager',
         preparedBy: user?.name,
         costs: costList,
         sales: saleList,

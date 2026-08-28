@@ -10,6 +10,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useLocale } from '@/providers/locale-provider';
+
 type TextVariant = 'display' | 'title' | 'subtitle' | 'body' | 'caption' | 'label' | 'money';
 
 const textVariants: Record<TextVariant, string> = {
@@ -128,20 +130,21 @@ export function TextField({
   label,
   error,
   secureTextEntry,
+  compact = false,
   className = '',
   ...props
-}: TextInputProps & { label: string; error?: string; className?: string }) {
+}: TextInputProps & { label: string; error?: string; compact?: boolean; className?: string }) {
   const [visible, setVisible] = useState(false);
   const isPassword = Boolean(secureTextEntry);
 
   return (
-    <View className={`gap-1.5 ${className}`}>
+    <View className={`${compact ? 'gap-1' : 'gap-1.5'} ${className}`}>
       <AppText variant="label">{label}</AppText>
       <View className="relative">
         <TextInput
           placeholderTextColor="#5C7266"
           secureTextEntry={isPassword && !visible}
-          className={`min-h-[52px] rounded-xl border bg-white px-4 text-[15px] text-ink ${
+          className={`${compact ? 'min-h-[44px] text-[14px]' : 'min-h-[52px] text-[15px]'} rounded-xl border bg-white px-4 text-ink ${
             error ? 'border-danger' : 'border-line'
           } ${isPassword ? 'pr-12' : ''}`}
           {...props}
@@ -234,11 +237,13 @@ export function EmptyState({ title, subtitle }: { title: string; subtitle?: stri
 }
 
 export function LoadingBlock() {
+  const { t } = useLocale();
+
   return (
     <View className="items-center py-12">
       <ActivityIndicator size="large" color="#006A4E" />
       <AppText variant="caption" className="mt-3">
-        Loading khamar data…
+        {t('loadingKhamar')}
       </AppText>
     </View>
   );

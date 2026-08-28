@@ -1,5 +1,5 @@
 /**
- * Khamar design tokens — Bangladesh farm vernacular.
+ * Khamar Manager design tokens — Bangladesh farm vernacular.
  * Padma green + harvest gold + cool rice mist (not cream/terracotta defaults).
  */
 

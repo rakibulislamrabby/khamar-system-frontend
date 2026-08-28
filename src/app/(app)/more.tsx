@@ -3,6 +3,7 @@ import { Pressable, ScrollView, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { AppText, Button, Card, PageHeader, Screen } from '@/components/ui/primitives';
+import { BrandLogo } from '@/components/brand-logo';
 import { labelize } from '@/lib/format';
 import { canWritePoultry } from '@/lib/permissions';
 import { useAuth } from '@/providers/auth-provider';
@@ -102,6 +103,13 @@ export default function MoreScreen() {
         </View>
 
         <Button title={t('signOut')} variant="danger" onPress={() => logout()} />
+
+        <View className="items-center gap-1.5 pt-2">
+          <BrandLogo size="sm" />
+          <AppText variant="caption" className="text-center">
+            {t('appName')}
+          </AppText>
+        </View>
       </ScrollView>
     </Screen>
   );

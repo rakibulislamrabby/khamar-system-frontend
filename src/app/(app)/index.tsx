@@ -1,8 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { RefreshControl, ScrollView, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { dashboardApi } from '@/api';
+import { BrandLogo } from '@/components/brand-logo';
 import {
   AppText,
   Badge,
@@ -10,7 +12,6 @@ import {
   EmptyState,
   ListRow,
   LoadingBlock,
-  Screen,
   SectionHeader,
   StatCard,
 } from '@/components/ui/primitives';
@@ -21,6 +22,7 @@ import { useLocale } from '@/providers/locale-provider';
 export default function DashboardScreen() {
   const { t } = useLocale();
   const { user, organization } = useAuth();
+  const insets = useSafeAreaInsets();
   const query = useQuery({
     queryKey: ['dashboard'],
     queryFn: dashboardApi.get,
@@ -29,28 +31,39 @@ export default function DashboardScreen() {
   const data = query.data;
 
   return (
-    <Screen padded={false}>
+    <View className="flex-1 bg-rice">
       <ScrollView
+        className="flex-1"
         contentContainerClassName="pb-10"
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={query.isRefetching} onRefresh={() => query.refetch()} />
         }>
-        <View className="rounded-b-3xl bg-padma px-5 pb-10 pt-5">
-          <AppText variant="caption" className="text-white/80">
-            {t('greeting')}
-          </AppText>
-          <AppText variant="title" className="mt-1 text-white">
-            {user?.name ?? 'Farmer'}
-          </AppText>
-          <AppText variant="caption" className="mt-1 text-white/85">
-            {organization?.name}
-            {organization?.district ? ` · ${organization.district}` : ''}
-            {organization?.upazila ? `, ${organization.upazila}` : ''}
-          </AppText>
+        <View
+          className="rounded-b-3xl bg-padma px-5 pb-8"
+          style={{ paddingTop: insets.top + 14 }}>
+          <View className="flex-row items-start justify-between gap-3">
+            <View className="min-w-0 flex-1">
+              <AppText variant="caption" className="text-white/80">
+                {t('greeting')}
+              </AppText>
+              <AppText variant="title" className="mt-1 text-white">
+                {user?.name ?? 'Farmer'}
+              </AppText>
+              <AppText variant="caption" className="mt-1 text-white/85" numberOfLines={2}>
+                {organization?.name}
+                {organization?.district ? ` · ${organization.district}` : ''}
+                {organization?.upazila ? `, ${organization.upazila}` : ''}
+              </AppText>
+            </View>
+
+            <View className="rounded-lg bg-white/15 p-1">
+              <BrandLogo size="header" />
+            </View>
+          </View>
         </View>
 
-        <View className="-mt-5 px-4">
+        <View className="-mt-4 px-4">
           {query.isLoading ? <LoadingBlock /> : null}
           {query.isError ? (
             <EmptyState
@@ -158,6 +171,6 @@ export default function DashboardScreen() {
           ) : null}
         </View>
       </ScrollView>
-    </Screen>
+    </View>
   );
 }

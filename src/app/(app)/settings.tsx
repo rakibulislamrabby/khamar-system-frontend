@@ -7,11 +7,14 @@ import {
   OptionChips,
   Screen,
 } from '@/components/ui/primitives';
+import { BrandLogo } from '@/components/brand-logo';
 import { useLocale } from '@/providers/locale-provider';
 import type { Locale } from '@/i18n/translations';
+import Constants from 'expo-constants';
 
 export default function SettingsScreen() {
   const { t, locale, setLocale } = useLocale();
+  const appVersion = Constants.expoConfig?.version ?? '1.0.0';
 
   return (
     <Screen>
@@ -30,6 +33,13 @@ export default function SettingsScreen() {
           ]}
           onChange={(value) => setLocale(value as Locale)}
         />
+      </View>
+
+      <View className="mt-10 items-center gap-2">
+        <BrandLogo size="sm" />
+        <AppText variant="subtitle">{t('appName')}</AppText>
+        <AppText variant="caption">{t('brandTagline')}</AppText>
+        <AppText variant="caption">v{appVersion}</AppText>
       </View>
     </Screen>
   );
