@@ -231,11 +231,18 @@ export default function RegisterScreen() {
             </View>
           )}
 
-          <View className="mt-2 flex-row items-center justify-center gap-1.5">
-            <AppText variant="caption">{t('alreadyRegistered')}</AppText>
-            <Link href="/(auth)/login">
+          <View className="mt-2 items-center gap-2">
+            <View className="flex-row items-center justify-center gap-1.5">
+              <AppText variant="caption">{t('alreadyRegistered')}</AppText>
+              <Link href="/(auth)/login">
+                <AppText variant="caption" className="font-semibold text-padma">
+                  {t('signIn')}
+                </AppText>
+              </Link>
+            </View>
+            <Link href="/">
               <AppText variant="caption" className="font-semibold text-padma">
-                {t('signIn')}
+                {t('backHome')}
               </AppText>
             </Link>
           </View>

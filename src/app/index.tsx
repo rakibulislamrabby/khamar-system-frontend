@@ -1,13 +1,6 @@
-import { Redirect } from 'expo-router';
+import { LandingPage } from '@/components/landing-page';
 
-import { useAuth } from '@/providers/auth-provider';
-
+/** Website uses landing-page.web.tsx. Android keeps landing-page.tsx. */
 export default function Index() {
-  const { status } = useAuth();
-
-  if (status === 'authenticated') {
-    return <Redirect href="/(app)" />;
-  }
-
-  return <Redirect href="/(auth)/login" />;
+  return <LandingPage />;
 }

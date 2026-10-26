@@ -71,11 +71,18 @@ export default function LoginScreen() {
             <Button title={t('signIn')} onPress={onSubmit} loading={loading} />
           </View>
 
-          <View className="flex-row items-center justify-center gap-1.5 pb-1">
-            <AppText variant="caption">{t('newOwner')}</AppText>
-            <Link href="/(auth)/register">
+          <View className="items-center gap-2 pb-1">
+            <View className="flex-row items-center justify-center gap-1.5">
+              <AppText variant="caption">{t('newOwner')}</AppText>
+              <Link href="/(auth)/register">
+                <AppText variant="caption" className="font-semibold text-padma">
+                  {t('createAccount')}
+                </AppText>
+              </Link>
+            </View>
+            <Link href="/">
               <AppText variant="caption" className="font-semibold text-padma">
-                {t('createAccount')}
+                {t('backHome')}
               </AppText>
             </Link>
           </View>
