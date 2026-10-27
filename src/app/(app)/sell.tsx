@@ -1,3 +1,4 @@
+import { useDesktopWeb, WebSell } from '@/components/dashboard';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import {
@@ -27,7 +28,7 @@ import { formatBdt, formatDate, labelize } from '@/lib/format';
 import { resolveId } from '@/lib/ids';
 import { useLocale } from '@/providers/locale-provider';
 
-export default function SellScreen() {
+function SellScreen() {
   const { t } = useLocale();
   const queryClient = useQueryClient();
 
@@ -204,4 +205,8 @@ export default function SellScreen() {
       </KeyboardAvoidingView>
     </Screen>
   );
+}
+
+export default function Route() {
+  return useDesktopWeb() ? <WebSell /> : <SellScreen />;
 }

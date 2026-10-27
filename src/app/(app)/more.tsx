@@ -1,3 +1,4 @@
+import { useDesktopWeb, WebSettings } from '@/components/dashboard';
 import { router } from 'expo-router';
 import { Pressable, ScrollView, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -5,14 +6,16 @@ import { Ionicons } from '@expo/vector-icons';
 import { AppText, Button, Card, PageHeader, Screen } from '@/components/ui/primitives';
 import { BrandLogo } from '@/components/brand-logo';
 import { labelize } from '@/lib/format';
-import { canWritePoultry } from '@/lib/permissions';
+import { canWriteCattle, canWritePoultry } from '@/lib/permissions';
 import { useAuth } from '@/providers/auth-provider';
 import { useLocale } from '@/providers/locale-provider';
 
-export default function MoreScreen() {
+function MoreScreen() {
   const { t } = useLocale();
   const { user, organization, logout } = useAuth();
   const canBatch = canWritePoultry(user?.role);
+  const canCattle = canWriteCattle(user?.role);
+  const cattleFarm = organization?.farmType === 'cow';
   const initial = (user?.name?.trim()?.charAt(0) || 'K').toUpperCase();
 
   const links = [
@@ -73,7 +76,10 @@ export default function MoreScreen() {
           </View>
         </Card>
 
-        {canBatch ? (
+        {cattleFarm && canCattle ? (
+          <Button title={t('addAnimal')} onPress={() => router.push('/(app)/cattle/new')} />
+        ) : null}
+        {!cattleFarm && canBatch ? (
           <Button
             title={t('addPoultryBatch')}
             onPress={() => router.push('/(app)/poultry/new')}
@@ -113,4 +119,8 @@ export default function MoreScreen() {
       </ScrollView>
     </Screen>
   );
+}
+
+export default function Route() {
+  return useDesktopWeb() ? <WebSettings /> : <MoreScreen />;
 }

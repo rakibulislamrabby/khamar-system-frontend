@@ -1,3 +1,4 @@
+import { useDesktopWeb, WebCustomers } from '@/components/dashboard';
 import { useQuery } from '@tanstack/react-query';
 import { RefreshControl, ScrollView } from 'react-native';
 
@@ -11,7 +12,7 @@ import {
   Screen,
 } from '@/components/ui/primitives';
 
-export default function CustomersScreen() {
+function CustomersScreen() {
   const query = useQuery({
     queryKey: ['customers'],
     queryFn: () => organizationApi.listCustomers(),
@@ -54,4 +55,8 @@ export default function CustomersScreen() {
       </ScrollView>
     </Screen>
   );
+}
+
+export default function Route() {
+  return useDesktopWeb() ? <WebCustomers /> : <CustomersScreen />;
 }

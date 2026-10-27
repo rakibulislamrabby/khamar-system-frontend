@@ -1,9 +1,11 @@
+import { useDesktopWeb, WebLivestock } from '@/components/dashboard';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { RefreshControl, ScrollView, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { domainApi } from '@/api';
+import { CattleHerd } from '@/components/cattle-herd';
 import {
   Badge,
   Button,
@@ -19,7 +21,13 @@ import { canWritePoultry } from '@/lib/permissions';
 import { useAuth } from '@/providers/auth-provider';
 import { useLocale } from '@/providers/locale-provider';
 
-export default function LivestockScreen() {
+function LivestockScreen() {
+  const { organization } = useAuth();
+  if (organization?.farmType === 'cow') return <CattleHerd />;
+  return <PoultryLivestock />;
+}
+
+function PoultryLivestock() {
   const { t } = useLocale();
   const { user } = useAuth();
   const canAddBatch = canWritePoultry(user?.role);
@@ -90,4 +98,8 @@ export default function LivestockScreen() {
       </ScrollView>
     </Screen>
   );
+}
+
+export default function Route() {
+  return useDesktopWeb() ? <WebLivestock /> : <LivestockScreen />;
 }

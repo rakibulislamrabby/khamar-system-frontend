@@ -24,6 +24,11 @@ export function canWriteCost(role?: UserRole | null) {
   );
 }
 
+/** Roles that can register cattle and write milk or weight (backend cow:write). */
+export function canWriteCattle(role?: UserRole | null) {
+  return canWritePoultry(role);
+}
+
 export function isOwnerFirm(role?: UserRole | null) {
   return role === 'owner' || role === 'admin';
 }

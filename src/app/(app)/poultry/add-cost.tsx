@@ -1,3 +1,4 @@
+import { useDesktopWeb, WebBatch } from '@/components/dashboard';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
@@ -32,7 +33,7 @@ function titleForKind(kind: CostKind, t: (k: 'costFeed' | 'costVaccine' | 'costD
   return t('addBatchCost');
 }
 
-export default function AddBatchCostScreen() {
+function AddBatchCostScreen() {
   const { t } = useLocale();
   const { user, organization } = useAuth();
   const queryClient = useQueryClient();
@@ -263,4 +264,14 @@ export default function AddBatchCostScreen() {
       </KeyboardAvoidingView>
     </Screen>
   );
+}
+
+function WebAddCostRoute() {
+  const { batchId, kind } = useLocalSearchParams<{ batchId: string; kind?: string }>();
+  const entry = kind === 'feed' || kind === 'vaccine' || kind === 'death' ? kind : 'other';
+  return <WebBatch id={String(batchId)} initialEntry={entry} />;
+}
+
+export default function Route() {
+  return useDesktopWeb() ? <WebAddCostRoute /> : <AddBatchCostScreen />;
 }

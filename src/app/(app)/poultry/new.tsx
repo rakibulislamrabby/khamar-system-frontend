@@ -1,3 +1,4 @@
+import { useDesktopWeb, WebLivestock } from '@/components/dashboard';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
@@ -22,7 +23,7 @@ function todayInput() {
   return new Date().toISOString().slice(0, 10);
 }
 
-export default function NewPoultryBatchScreen() {
+function NewPoultryBatchScreen() {
   const { t } = useLocale();
   const { user, organization } = useAuth();
   const queryClient = useQueryClient();
@@ -208,4 +209,8 @@ export default function NewPoultryBatchScreen() {
       </KeyboardAvoidingView>
     </Screen>
   );
+}
+
+export default function Route() {
+  return useDesktopWeb() ? <WebLivestock openNew /> : <NewPoultryBatchScreen />;
 }

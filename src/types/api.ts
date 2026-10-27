@@ -152,17 +152,60 @@ export interface Sale {
   _id: string;
   saleNumber?: string;
   farmId?: string;
-  customerId?: string;
+  customerId?: string | Pick<Customer, '_id' | 'name' | 'phone'> | null;
   saleDate?: string;
+  subtotal?: number;
+  discount?: number;
   totalAmount: number;
+  receivedAmount?: number;
   receivableAmount?: number;
+  notes?: string;
   status?: string;
+  createdAt?: string;
   items?: Array<{
     itemName: string;
     quantity: number;
     unit: string;
     rate: number;
+    total?: number;
+    referenceType?: string;
+    referenceId?: string;
   }>;
+}
+
+export interface Shed {
+  _id: string;
+  farmId: string | Pick<Farm, '_id' | 'name'>;
+  name: string;
+  capacity?: number;
+  description?: string;
+  isActive?: boolean;
+}
+
+export interface Purchase {
+  _id: string;
+  purchaseNumber?: string;
+  farmId?: string;
+  supplierId?: string | Pick<Supplier, '_id' | 'name' | 'phone'> | null;
+  purchaseDate?: string;
+  items: Array<{ itemName: string; quantity: number; unit: string; rate: number; total?: number }>;
+  totalAmount: number;
+  paidAmount?: number;
+  payableAmount?: number;
+  notes?: string;
+  status?: string;
+  createdAt?: string;
+}
+
+export interface EggRecord {
+  _id: string;
+  farmId: string;
+  batchId?: string | { _id: string; batchName: string } | null;
+  productionDate: string;
+  activeBirds: number;
+  totalEggs: number;
+  saleableEggs: number;
+  productionRate?: number;
 }
 
 export interface PoultryBatch {
@@ -178,10 +221,12 @@ export interface PoultryBatch {
   unitPrice?: number;
   mortalityCount?: number;
   mortalityPercentage?: number;
+  averageWeight?: number;
   totalCost?: number;
   totalRevenue?: number;
   profitLoss?: number;
   status?: string;
+  createdAt?: string;
 }
 
 export interface Cow {
@@ -192,8 +237,31 @@ export interface Cow {
   gender: 'male' | 'female';
   purpose: CowPurpose;
   status?: string;
+  entryWeight?: number;
   currentWeight?: number;
+  purchasePrice?: number;
+  purchaseDate?: string;
+  pregnancyStatus?: string;
   dateOfBirth?: string;
+  notes?: string;
+}
+
+export interface MilkRecord {
+  _id: string;
+  cowId?: string | { _id: string; animalId: string; breed?: string } | null;
+  productionDate: string;
+  morningQuantity: number;
+  eveningQuantity: number;
+  totalQuantity: number;
+}
+
+export interface CowHealthRecord {
+  _id: string;
+  cowId?: string;
+  recordType: string;
+  recordDate: string;
+  title: string;
+  weight?: number;
 }
 
 export interface Customer {
@@ -233,6 +301,7 @@ export interface Cost {
   totalAmount: number;
   costDate?: string;
   description?: string;
+  createdAt?: string;
 }
 
 export interface CostCategory {
@@ -284,6 +353,8 @@ export interface DashboardData {
     lactatingCows: number;
     pregnantCows: number;
     todayMilkProduction: number;
+    fatteningCattle?: number;
+    averageWeight?: number;
   };
   alerts: {
     lowStockItems: InventoryItem[];

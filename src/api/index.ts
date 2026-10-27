@@ -7,19 +7,40 @@ import type {
   Cost,
   CostCategory,
   Cow,
+  CowHealthRecord,
   CreateCostPayload,
   CreatePoultryBatchPayload,
   Customer,
   DashboardData,
+  EggRecord,
   Farm,
   InventoryItem,
+  MilkRecord,
   Organization,
   PoultryBatch,
+  Purchase,
   RegisterPayload,
   Sale,
+  Shed,
   Supplier,
   User,
+  UserRole,
 } from '@/types/api';
+
+/** Backend caps `limit` at 100, so walk every page for reports and charts. */
+export async function fetchAll<T>(
+  path: string,
+  params: Record<string, string | number | undefined> = {},
+  maxPages = 20
+) {
+  const rows: T[] = [];
+  for (let page = 1; page <= maxPages; page++) {
+    const { data } = await api.get<ApiPaginated<T>>(path, { params: { ...params, page, limit: 100 } });
+    rows.push(...data.data);
+    if (page >= (data.pagination?.totalPages ?? 1)) break;
+  }
+  return rows;
+}
 
 export const authApi = {
   login: async (email: string, password: string) => {
@@ -44,6 +65,27 @@ export const authApi = {
   },
   refresh: async (refreshToken: string) => {
     const { data } = await api.post<ApiSuccess<AuthTokens>>('/auth/refresh', { refreshToken });
+    return data.data;
+  },
+  changePassword: async (currentPassword: string, newPassword: string) => {
+    await api.post('/auth/change-password', { currentPassword, newPassword });
+  },
+  listUsers: () => fetchAll<User>('/auth/users'),
+  createUser: async (payload: {
+    name: string;
+    email: string;
+    phone?: string;
+    password: string;
+    role: UserRole;
+  }) => {
+    const { data } = await api.post<ApiSuccess<User>>('/auth/users', payload);
+    return data.data;
+  },
+  updateUser: async (
+    id: string,
+    payload: Partial<{ name: string; phone: string; role: UserRole; isActive: boolean }>
+  ) => {
+    const { data } = await api.patch<ApiSuccess<User>>(`/auth/users/${id}`, payload);
     return data.data;
   },
 };
@@ -78,6 +120,44 @@ export const organizationApi = {
     });
     return data;
   },
+  update: async (payload: Partial<Omit<Organization, '_id' | 'email' | 'farmType'>>) => {
+    const { data } = await api.patch<ApiSuccess<Organization>>('/organization', payload);
+    return data.data;
+  },
+  allFarms: () => fetchAll<Farm>('/farms'),
+  createFarm: async (payload: {
+    name: string;
+    farmType: 'poultry' | 'cow';
+    district?: string;
+    upazila?: string;
+    address?: string;
+  }) => {
+    const { data } = await api.post<ApiSuccess<Farm>>('/farms', payload);
+    return data.data;
+  },
+  updateFarm: async (id: string, payload: Partial<Pick<Farm, 'name' | 'district' | 'upazila' | 'address' | 'isActive'>>) => {
+    const { data } = await api.patch<ApiSuccess<Farm>>(`/farms/${id}`, payload);
+    return data.data;
+  },
+  allSheds: (farmId?: string) => fetchAll<Shed>('/sheds', { farmId }),
+  createShed: async (payload: { farmId: string; name: string; capacity?: number; description?: string }) => {
+    const { data } = await api.post<ApiSuccess<Shed>>('/sheds', payload);
+    return data.data;
+  },
+  allCustomers: () => fetchAll<Customer>('/customers'),
+  createCustomer: async (payload: Omit<Customer, '_id'>) => {
+    const { data } = await api.post<ApiSuccess<Customer>>('/customers', payload);
+    return data.data;
+  },
+  updateCustomer: async (id: string, payload: Partial<Omit<Customer, '_id'>>) => {
+    const { data } = await api.patch<ApiSuccess<Customer>>(`/customers/${id}`, payload);
+    return data.data;
+  },
+  allSuppliers: () => fetchAll<Supplier>('/suppliers'),
+  createSupplier: async (payload: Omit<Supplier, '_id'>) => {
+    const { data } = await api.post<ApiSuccess<Supplier>>('/suppliers', payload);
+    return data.data;
+  },
 };
 
 export const inventoryApi = {
@@ -91,6 +171,33 @@ export const inventoryApi = {
     const { data } = await api.get<ApiSuccess<InventoryItem[]>>('/inventory/low-stock');
     return data.data;
   },
+  allItems: () => fetchAll<InventoryItem>('/inventory'),
+  createItem: async (payload: {
+    farmId?: string;
+    name: string;
+    category: string;
+    unit: string;
+    currentStock?: number;
+    minStockLevel?: number;
+    unitCost?: number;
+  }) => {
+    const { data } = await api.post<ApiSuccess<InventoryItem>>('/inventory', payload);
+    return data.data;
+  },
+  recordMovement: async (payload: {
+    inventoryItemId: string;
+    farmId?: string;
+    movementType: 'purchase' | 'receive' | 'transfer' | 'consume' | 'wastage' | 'adjustment';
+    quantity: number;
+    unitCost?: number;
+    notes?: string;
+  }) => {
+    const { data } = await api.post<ApiSuccess<unknown>>('/inventory/movements', payload);
+    return data.data;
+  },
+  allPurchases: () => fetchAll<Purchase>('/purchases'),
+  allSales: () => fetchAll<Sale>('/sales'),
+  allCosts: (farmId?: string) => fetchAll<Cost>('/costs', { farmId }),
   listSales: async (page = 1, limit = 30) => {
     const { data } = await api.get<ApiPaginated<Sale>>('/sales', {
       params: { page, limit },
@@ -113,6 +220,7 @@ export const inventoryApi = {
   },
   createSale: async (payload: {
     farmId?: string;
+    customerId?: string;
     saleDate?: string;
     items: Array<{
       itemName: string;
@@ -122,6 +230,7 @@ export const inventoryApi = {
       referenceType?: string;
       referenceId?: string;
     }>;
+    discount?: number;
     receivedAmount?: number;
     notes?: string;
   }) => {
@@ -131,6 +240,16 @@ export const inventoryApi = {
 };
 
 export const domainApi = {
+  allPoultryBatches: () => fetchAll<PoultryBatch>('/poultry/batches'),
+  allCows: () => fetchAll<Cow>('/cows'),
+  recentEggs: async () => {
+    const { data } = await api.get<ApiPaginated<EggRecord>>('/poultry/eggs', { params: { limit: 100 } });
+    return data.data;
+  },
+  recentMilk: async () => {
+    const { data } = await api.get<ApiPaginated<MilkRecord>>('/cows/milk', { params: { limit: 100 } });
+    return data.data;
+  },
   listPoultryBatches: async (page = 1, limit = 50, farmId?: string) => {
     const { data } = await api.get<ApiPaginated<PoultryBatch>>('/poultry/batches', {
       params: { page, limit, farmId },
@@ -160,5 +279,55 @@ export const domainApi = {
       params: { page, limit, farmId },
     });
     return data;
+  },
+  getCow: async (id: string) => {
+    const { data } = await api.get<ApiSuccess<Cow>>(`/cows/${id}`);
+    return data.data;
+  },
+  createCow: async (payload: {
+    farmId: string;
+    animalId: string;
+    breed: string;
+    gender: 'male' | 'female';
+    purpose: 'dairy' | 'beef';
+    purchaseDate?: string;
+    purchasePrice?: number;
+    entryWeight?: number;
+    currentWeight?: number;
+  }) => {
+    const { data } = await api.post<ApiSuccess<Cow>>('/cows', payload);
+    return data.data;
+  },
+  listMilk: async (cowId: string) => {
+    const { data } = await api.get<ApiPaginated<MilkRecord>>('/cows/milk', {
+      params: { cowId, limit: 20 },
+    });
+    return data;
+  },
+  recordMilk: async (payload: {
+    farmId: string;
+    cowId: string;
+    productionDate: string;
+    morningQuantity?: number;
+    eveningQuantity?: number;
+  }) => {
+    const { data } = await api.post<ApiSuccess<MilkRecord>>('/cows/milk', payload);
+    return data.data;
+  },
+  listCowHealth: async (cowId: string) => {
+    const { data } = await api.get<ApiSuccess<CowHealthRecord[]>>('/cows/health', {
+      params: { cowId },
+    });
+    return data.data;
+  },
+  recordWeight: async (payload: { cowId: string; weight: number; recordDate: string }) => {
+    const { data } = await api.post<ApiSuccess<CowHealthRecord>>('/cows/health', {
+      cowId: payload.cowId,
+      recordType: 'weight',
+      recordDate: payload.recordDate,
+      title: 'Weight',
+      weight: payload.weight,
+    });
+    return data.data;
   },
 };

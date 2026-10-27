@@ -1,3 +1,4 @@
+import { useDesktopWeb, WebSettings } from '@/components/dashboard';
 import { router } from 'expo-router';
 import { View } from 'react-native';
 
@@ -12,7 +13,7 @@ import { useLocale } from '@/providers/locale-provider';
 import type { Locale } from '@/i18n/translations';
 import Constants from 'expo-constants';
 
-export default function SettingsScreen() {
+function SettingsScreen() {
   const { t, locale, setLocale } = useLocale();
   const appVersion = Constants.expoConfig?.version ?? '1.0.0';
 
@@ -43,4 +44,8 @@ export default function SettingsScreen() {
       </View>
     </Screen>
   );
+}
+
+export default function Route() {
+  return useDesktopWeb() ? <WebSettings /> : <SettingsScreen />;
 }

@@ -1,3 +1,4 @@
+import { WebSignIn } from '@/components/dashboard';
 import { Link } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, View } from 'react-native';
@@ -7,7 +8,7 @@ import { AppText, Button, Screen, TextField } from '@/components/ui/primitives';
 import { useAuth } from '@/providers/auth-provider';
 import { useLocale } from '@/providers/locale-provider';
 
-export default function LoginScreen() {
+function LoginScreen() {
   const { t } = useLocale();
   const { login } = useAuth();
   const [email, setEmail] = useState('');
@@ -90,4 +91,8 @@ export default function LoginScreen() {
       </KeyboardAvoidingView>
     </Screen>
   );
+}
+
+export default function Route() {
+  return Platform.OS === 'web' ? <WebSignIn /> : <LoginScreen />;
 }

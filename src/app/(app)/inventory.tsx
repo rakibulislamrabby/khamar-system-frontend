@@ -1,3 +1,4 @@
+import { useDesktopWeb, WebStock } from '@/components/dashboard';
 import { useQuery } from '@tanstack/react-query';
 import { RefreshControl, ScrollView } from 'react-native';
 
@@ -13,7 +14,7 @@ import {
 } from '@/components/ui/primitives';
 import { formatBdt, labelize } from '@/lib/format';
 
-export default function InventoryScreen() {
+function InventoryScreen() {
   const query = useQuery({
     queryKey: ['inventory'],
     queryFn: () => inventoryApi.list(),
@@ -62,4 +63,8 @@ export default function InventoryScreen() {
       </ScrollView>
     </Screen>
   );
+}
+
+export default function Route() {
+  return useDesktopWeb() ? <WebStock /> : <InventoryScreen />;
 }

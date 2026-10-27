@@ -1,3 +1,4 @@
+import { useDesktopWeb, WebBatch } from '@/components/dashboard';
 import { useQuery } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo } from 'react';
@@ -50,7 +51,7 @@ function ActionChip({
   );
 }
 
-export default function PoultryBatchDetailScreen() {
+function PoultryBatchDetailScreen() {
   const { t } = useLocale();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useAuth();
@@ -220,4 +221,13 @@ export default function PoultryBatchDetailScreen() {
       ) : null}
     </Screen>
   );
+}
+
+function WebBatchRoute() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  return <WebBatch id={String(id)} />;
+}
+
+export default function Route() {
+  return useDesktopWeb() ? <WebBatchRoute /> : <PoultryBatchDetailScreen />;
 }

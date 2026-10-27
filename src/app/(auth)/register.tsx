@@ -1,3 +1,4 @@
+import { WebRegister } from '@/components/dashboard';
 import { Link } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
@@ -16,7 +17,7 @@ import type { FarmType } from '@/types/api';
 
 type Step = 1 | 2;
 
-export default function RegisterScreen() {
+function RegisterScreen() {
   const { t } = useLocale();
   const { register } = useAuth();
   const [step, setStep] = useState<Step>(1);
@@ -250,4 +251,8 @@ export default function RegisterScreen() {
       </KeyboardAvoidingView>
     </Screen>
   );
+}
+
+export default function Route() {
+  return Platform.OS === 'web' ? <WebRegister /> : <RegisterScreen />;
 }

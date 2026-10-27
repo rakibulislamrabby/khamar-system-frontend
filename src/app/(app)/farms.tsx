@@ -1,3 +1,4 @@
+import { useDesktopWeb, WebFarms } from '@/components/dashboard';
 import { useQuery } from '@tanstack/react-query';
 import { RefreshControl, ScrollView, View } from 'react-native';
 
@@ -13,7 +14,7 @@ import {
 } from '@/components/ui/primitives';
 import { labelize } from '@/lib/format';
 
-export default function FarmsScreen() {
+function FarmsScreen() {
   const query = useQuery({
     queryKey: ['farms'],
     queryFn: () => organizationApi.listFarms(),
@@ -66,4 +67,8 @@ export default function FarmsScreen() {
       </ScrollView>
     </Screen>
   );
+}
+
+export default function Route() {
+  return useDesktopWeb() ? <WebFarms /> : <FarmsScreen />;
 }

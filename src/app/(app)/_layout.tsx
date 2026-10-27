@@ -1,14 +1,13 @@
 import { Tabs } from 'expo-router';
-import { Platform, useWindowDimensions } from 'react-native';
+import { Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { WebDashboard } from '@/components/web-dashboard';
+import { DashboardShell, useDesktopWeb } from '@/components/dashboard';
 import { useLocale } from '@/providers/locale-provider';
 
 export default function AppLayout() {
-  const { width } = useWindowDimensions();
-  if (Platform.OS === 'web' && width >= 960) {
-    return <WebDashboard />;
+  if (useDesktopWeb()) {
+    return <DashboardShell />;
   }
   return <PhoneTabs />;
 }

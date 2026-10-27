@@ -1,3 +1,4 @@
+import { useDesktopWeb, WebHisab } from '@/components/dashboard';
 import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { Alert, RefreshControl, ScrollView, View } from 'react-native';
@@ -20,7 +21,7 @@ import { downloadInvoicePdf } from '@/lib/print-invoice';
 import { useAuth } from '@/providers/auth-provider';
 import { useLocale } from '@/providers/locale-provider';
 
-export default function HisabScreen() {
+function HisabScreen() {
   const { t, locale } = useLocale();
   const { organization, user } = useAuth();
   const [printing, setPrinting] = useState(false);
@@ -167,4 +168,8 @@ export default function HisabScreen() {
       </ScrollView>
     </Screen>
   );
+}
+
+export default function Route() {
+  return useDesktopWeb() ? <WebHisab /> : <HisabScreen />;
 }

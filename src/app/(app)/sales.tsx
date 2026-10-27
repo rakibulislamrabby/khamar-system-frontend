@@ -1,3 +1,4 @@
+import { useDesktopWeb, WebSales } from '@/components/dashboard';
 import { useQuery } from '@tanstack/react-query';
 import { RefreshControl, ScrollView, View } from 'react-native';
 
@@ -14,7 +15,7 @@ import {
 } from '@/components/ui/primitives';
 import { formatBdt, formatDate, labelize } from '@/lib/format';
 
-export default function SalesScreen() {
+function SalesScreen() {
   const query = useQuery({
     queryKey: ['sales'],
     queryFn: () => inventoryApi.listSales(),
@@ -63,4 +64,8 @@ export default function SalesScreen() {
       </ScrollView>
     </Screen>
   );
+}
+
+export default function Route() {
+  return useDesktopWeb() ? <WebSales /> : <SalesScreen />;
 }

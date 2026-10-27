@@ -1,3 +1,4 @@
+import { useDesktopWeb, WebOrganization } from '@/components/dashboard';
 import { useQuery } from '@tanstack/react-query';
 import { View } from 'react-native';
 
@@ -12,6 +13,7 @@ import {
   Screen,
 } from '@/components/ui/primitives';
 import { formatDate, labelize } from '@/lib/format';
+import { useLocale } from '@/providers/locale-provider';
 
 function Row({ label, value }: { label: string; value?: string | null }) {
   if (!value) return null;
@@ -27,7 +29,8 @@ function Row({ label, value }: { label: string; value?: string | null }) {
   );
 }
 
-export default function OrganizationScreen() {
+function OrganizationScreen() {
+  const { t } = useLocale();
   const query = useQuery({
     queryKey: ['organization'],
     queryFn: organizationApi.get,
@@ -66,7 +69,18 @@ export default function OrganizationScreen() {
           <Row label="District" value={org.district} />
           <Row label="Upazila" value={org.upazila} />
           <Row label="Address" value={org.address || org.location} />
-          <Row label="Purpose" value={labelize(org.poultryPurpose || org.cowPurpose)} />
+          <Row
+            label="Purpose"
+            value={
+              org.farmType === 'cow'
+                ? org.cowPurpose === 'beef'
+                  ? t('logicFattenTitle')
+                  : org.cowPurpose === 'mixed'
+                    ? t('logicBothTitle')
+                    : t('logicDairyTitle')
+                : labelize(org.poultryPurpose)
+            }
+          />
           <Row label="Trade license" value={org.tradeLicense} />
           <Row label="TIN" value={org.tinNumber} />
           <Row label="BIN/VAT" value={org.binVatNumber} />
@@ -87,4 +101,8 @@ export default function OrganizationScreen() {
       ) : null}
     </Screen>
   );
+}
+
+export default function Route() {
+  return useDesktopWeb() ? <WebOrganization /> : <OrganizationScreen />;
 }

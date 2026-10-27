@@ -1,3 +1,4 @@
+import { useDesktopWeb, WebHome } from '@/components/dashboard';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { RefreshControl, ScrollView, View } from 'react-native';
@@ -19,7 +20,7 @@ import { formatBdt, formatDate, formatNumber } from '@/lib/format';
 import { useAuth } from '@/providers/auth-provider';
 import { useLocale } from '@/providers/locale-provider';
 
-export default function DashboardScreen() {
+function DashboardScreen() {
   const { t } = useLocale();
   const { user, organization } = useAuth();
   const insets = useSafeAreaInsets();
@@ -87,39 +88,77 @@ export default function DashboardScreen() {
                   tone={data.financials.netProfit >= 0 ? 'profit' : 'loss'}
                 />
                 <StatCard
-                  label={organization?.farmType === 'cow' ? t('milkToday') : t('eggsToday')}
+                  label={
+                    organization?.farmType === 'cow' && organization.cowPurpose === 'beef'
+                      ? t('onFeed')
+                      : organization?.farmType === 'cow'
+                        ? t('milkToday')
+                        : t('eggsToday')
+                  }
                   value={
-                    organization?.farmType === 'cow'
-                      ? `${formatNumber(data.dairy.todayMilkProduction)} L`
-                      : formatNumber(data.poultry.todayEggProduction)
+                    organization?.farmType === 'cow' && organization.cowPurpose === 'beef'
+                      ? formatNumber(data.dairy.fatteningCattle ?? data.dairy.totalCows)
+                      : organization?.farmType === 'cow'
+                        ? `${formatNumber(data.dairy.todayMilkProduction)} L`
+                        : formatNumber(data.poultry.todayEggProduction)
                   }
                   hint={
-                    organization?.farmType === 'cow'
-                      ? `${formatNumber(data.dairy.totalCows)} cows`
-                      : `${formatNumber(data.poultry.activeBatches)} active batches`
+                    organization?.farmType === 'cow' && organization.cowPurpose === 'beef'
+                      ? `${formatNumber(data.dairy.averageWeight)} kg ${t('avgWeight')}`
+                      : organization?.farmType === 'cow'
+                        ? `${formatNumber(data.dairy.totalCows)} ${t('cows')}`
+                        : `${formatNumber(data.poultry.activeBatches)} active batches`
                   }
                 />
               </View>
 
               <SectionHeader title={t('quickSnapshot')} />
-              <View className="flex-row gap-3">
-                <Card className="flex-1">
-                  <AppText variant="caption">{t('poultryBatches')}</AppText>
-                  <AppText variant="money" className="mt-1">
-                    {formatNumber(data.poultry.activeBatches)}
-                  </AppText>
-                </Card>
-                <Card className="flex-1">
-                  <AppText variant="caption">{t('dairyHerd')}</AppText>
-                  <AppText variant="money" className="mt-1">
-                    {formatNumber(data.dairy.totalCows)}
-                  </AppText>
-                  <AppText variant="caption" className="mt-1">
-                    {formatNumber(data.dairy.lactatingCows)} lactating ·{' '}
-                    {formatNumber(data.dairy.pregnantCows)} pregnant
-                  </AppText>
-                </Card>
-              </View>
+              {organization?.farmType === 'cow' ? (
+                <View className="flex-row gap-3">
+                  {organization.cowPurpose !== 'beef' ? (
+                    <Card className="flex-1">
+                      <AppText variant="caption">{t('dairyBook')}</AppText>
+                      <AppText variant="money" className="mt-1">
+                        {formatNumber(data.dairy.lactatingCows)}
+                      </AppText>
+                      <AppText variant="caption" className="mt-1">
+                        {formatNumber(data.dairy.todayMilkProduction)} L ·{' '}
+                        {formatNumber(data.dairy.pregnantCows)} {t('pregnantShort')}
+                      </AppText>
+                    </Card>
+                  ) : null}
+                  {organization.cowPurpose !== 'dairy' ? (
+                    <Card className="flex-1">
+                      <AppText variant="caption">{t('fattenBook')}</AppText>
+                      <AppText variant="money" className="mt-1">
+                        {formatNumber(data.dairy.fatteningCattle)}
+                      </AppText>
+                      <AppText variant="caption" className="mt-1">
+                        {formatNumber(data.dairy.averageWeight)} kg {t('avgWeight')}
+                      </AppText>
+                    </Card>
+                  ) : null}
+                </View>
+              ) : (
+                <View className="flex-row gap-3">
+                  <Card className="flex-1">
+                    <AppText variant="caption">{t('poultryBatches')}</AppText>
+                    <AppText variant="money" className="mt-1">
+                      {formatNumber(data.poultry.activeBatches)}
+                    </AppText>
+                  </Card>
+                  <Card className="flex-1">
+                    <AppText variant="caption">{t('dairyHerd')}</AppText>
+                    <AppText variant="money" className="mt-1">
+                      {formatNumber(data.dairy.totalCows)}
+                    </AppText>
+                    <AppText variant="caption" className="mt-1">
+                      {formatNumber(data.dairy.lactatingCows)} lactating ·{' '}
+                      {formatNumber(data.dairy.pregnantCows)} pregnant
+                    </AppText>
+                  </Card>
+                </View>
+              )}
 
               <SectionHeader
                 title={t('lowStockAlerts')}
@@ -173,4 +212,8 @@ export default function DashboardScreen() {
       </ScrollView>
     </View>
   );
+}
+
+export default function Route() {
+  return useDesktopWeb() ? <WebHome /> : <DashboardScreen />;
 }
