@@ -1,56 +1,62 @@
-# Welcome to your Expo app 👋
+# Khamar Manager frontend
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+One Expo project, two separate apps. Both use the same backend.
 
-## Get started
+| Target | What you get | Command (from `frontend/`) | Port |
+| --- | --- | --- | --- |
+| Web | Landing page → sign in / register → desktop web dashboard | `npm run web` | 8081 |
+| Native (Android) | Mobile app only: sign in → mobile home. No landing page, no web dashboard | `npm run native` | 8082 |
 
-1. Install dependencies
+The same commands work from the repo root (`npm run web`, `npm run native`, `npm run backend`).
+Web and native use different ports, so you can run both at once.
 
-   ```bash
-   npm install
-   ```
+`npm run native` sets `EXPO_PUBLIC_APP_TARGET=native`. If you press `w` or open http://localhost:8082 in a browser, you get the **mobile app** in a phone-sized frame, not the website. That's handy for a quick check without a phone.
 
-2. Start the app
+## Run locally
 
-   ```bash
-   npx expo start
-   ```
+1. Install dependencies once: `npm install` in `backend/` and in `frontend/`.
+2. Start the backend: `npm run backend` from the repo root (API on `http://localhost:5000/api`).
+3. Start what you need:
+   - **Web:** `npm run web`, then open http://localhost:8081.
+   - **Android phone (Expo Go):** `npm run native`, then scan the QR code with the Expo Go app. The phone and this PC must be on the same Wi-Fi.
+   - **Android emulator:** `npm run native:emulator`.
+   - **Phone over USB, native build:** `npm run native:usb` (needs Android SDK and `adb`).
 
-In the output, you'll find options to open the app in a
+## Backend URL
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+`.env.local` sets `EXPO_PUBLIC_API_URL=http://localhost:5000/api`.
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+- Web uses it as is.
+- On a phone, `localhost` would be the phone itself, so `src/api/client.ts` swaps it for this PC's LAN IP, the same one Metro uses (for example `http://192.168.0.103:5000/api`). The emulator uses `10.0.2.2`.
+- To point the native app at another server, set `EXPO_PUBLIC_NATIVE_API_URL` (for example `https://khamar-system.vercel.app/api`).
 
-## Get a fresh project
+### Phone can't connect?
 
-When you're ready, run:
+Ubuntu's firewall (`ufw`) blocks incoming connections by default, so the phone can't reach Metro (8082) or the backend (5000). Allow them once:
 
 ```bash
-npm run reset-project
+sudo ufw allow from 192.168.0.0/16 to any port 5000 proto tcp
+sudo ufw allow from 192.168.0.0/16 to any port 8081:8082 proto tcp
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Then check, in this order:
 
-### Other setup steps
+1. `npm run backend` is running. Open `http://<PC LAN IP>:5000/health` in the phone's browser and confirm it returns JSON.
+2. The phone is on the same Wi-Fi as the PC, not mobile data or a guest network.
+3. You opened the QR code in **Expo Go**. `npm run native` doesn't feed an installed APK; an APK from `npm run apk` runs on its own and only needs the backend.
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+## Build an installable APK (no EAS account)
 
-## Learn more
+```bash
+npm run apk                          # backend at http://<this PC's LAN IP>:5000/api
+npm run apk -- https://my.api/api    # any backend URL
+npm run apk -- --install             # also install on the USB-connected phone
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+The APK is written to `android/app/build/outputs/apk/release/app-release.apk`.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## How the split works
 
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- `src/lib/app-target.ts` decides website or mobile app: Android is always the mobile app, and the browser is too when `EXPO_PUBLIC_APP_TARGET=native`.
+- `src/app/index.tsx` shows the landing page (`landing-page.web.tsx`) on the website; the mobile app goes through `mobile-entry.tsx` to sign-in or home. Sign-in and register pick the mobile or web screen the same way.
+- `src/components/dashboard/index.ts` exports the web dashboard. On Android, `index.native.ts` replaces every dashboard screen with an empty placeholder, so none of the dashboard code ships in the APK.

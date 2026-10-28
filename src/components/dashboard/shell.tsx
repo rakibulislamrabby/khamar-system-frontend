@@ -13,16 +13,17 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-import { copy, type DashCopy } from '@/components/dashboard/copy';
+import { type DashCopy } from '@/components/dashboard/copy';
 import { useBatches, useCustomers, useDashboard, useFarms, useItems, useSales, due, batchTitle, isActiveBatch } from '@/components/dashboard/data';
-import { bdt, initials, num, type Lang } from '@/components/dashboard/format';
+import { bdt, initials, num } from '@/components/dashboard/format';
 import { Icon, type IconName } from '@/components/dashboard/icons';
 import { Avatar, Btn, IconBtn, IconTile, MenuItem, Popover, ToastProvider, Tx } from '@/components/dashboard/kit';
 import { C, FONT, SIDEBAR_W, TOPBAR_H } from '@/components/dashboard/theme';
+import { useDash } from '@/components/dashboard/use-dash';
 import { Contours } from '@/components/web-landing/graphics';
+import { isWebsite } from '@/lib/app-target';
 import { downloadApk } from '@/lib/download-apk';
 import { useAuth } from '@/providers/auth-provider';
-import { useLocale } from '@/providers/locale-provider';
 
 type PressState = PressableStateCallbackType & { hovered?: boolean };
 
@@ -30,13 +31,10 @@ export const DESKTOP_MIN = 960;
 
 export function useDesktopWeb() {
   const { width } = useWindowDimensions();
-  return Platform.OS === 'web' && width >= DESKTOP_MIN;
+  return isWebsite && width >= DESKTOP_MIN;
 }
 
-export function useDash(): { c: DashCopy; lang: Lang } {
-  const { locale } = useLocale();
-  return { c: copy[locale], lang: locale };
-}
+export { useDash };
 
 /** Usable content width next to the sidebar; screens use it to pick column counts. */
 export function useContentWidth() {

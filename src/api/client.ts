@@ -5,27 +5,27 @@ import { Platform } from 'react-native';
 import { tokenStorage } from '@/lib/storage';
 import type { ApiErrorBody, AuthTokens } from '@/types/api';
 
-function resolveApiUrl() {
-  const fromEnv = process.env.EXPO_PUBLIC_API_URL?.trim();
-  if (fromEnv) return fromEnv.replace(/\/$/, '');
+const LOOPBACK = /^(localhost|127\.0\.0\.1)$/;
 
-  // When Expo runs on a phone, reuse the same LAN host as Metro (e.g. 192.168.0.103).
+/** Host of the PC running Metro (e.g. 192.168.0.103), or 10.0.2.2 on the Android emulator. */
+function devMachineHost() {
   const hostUri =
     Constants.expoConfig?.hostUri ||
     Constants.experienceUrl?.replace(/^[a-z]+:\/\//, '') ||
     '';
   const host = hostUri.split(':')[0];
+  if (host && !LOOPBACK.test(host)) return host;
+  return Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
+}
 
-  if (host && host !== 'localhost' && host !== '127.0.0.1') {
-    return `http://${host}:5000/api`;
-  }
+function resolveApiUrl() {
+  const isNative = Platform.OS !== 'web';
+  const fromEnv = ((isNative && process.env.EXPO_PUBLIC_NATIVE_API_URL?.trim()) || process.env.EXPO_PUBLIC_API_URL?.trim() || '').replace(/\/$/, '');
 
-  // Android emulator loopback to host machine.
-  if (Platform.OS === 'android') {
-    return 'http://10.0.2.2:5000/api';
-  }
+  if (!fromEnv) return isNative ? `http://${devMachineHost()}:5000/api` : 'http://localhost:5000/api';
 
-  return 'http://localhost:5000/api';
+  // On a phone "localhost" is the phone itself, so point it at the dev machine instead.
+  return isNative ? fromEnv.replace(/^(https?:\/\/)(localhost|127\.0\.0\.1)(?=[:/]|$)/, `$1${devMachineHost()}`) : fromEnv;
 }
 
 export const API_URL = resolveApiUrl();

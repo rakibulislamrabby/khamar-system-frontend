@@ -1,31 +1,26 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 
 import { domainApi, organizationApi } from '@/api';
 import { getApiErrorMessage } from '@/api/client';
-import {
-  AppText,
-  Button,
-  FormBackHeader,
-  OptionChips,
-  Screen,
-  TextField,
-} from '@/components/ui/primitives';
 import { animalPurposeForFarm } from '@/components/cattle-herd';
-import { formatBdt } from '@/lib/format';
+import { bdt, fullDate } from '@/components/dashboard/format';
+import { Icon } from '@/components/dashboard/icons';
+import { C } from '@/components/dashboard/theme';
+import { useM } from '@/components/mobile/copy';
+import { CheckChips, EmptyCard, FieldLabel, MButton, MDateField, MField, MScreen, MSegmented, MSelect, NavHeader, Notice, Tx } from '@/components/mobile/kit';
 import { cattleLogic } from '@/lib/cattle';
 import { canWriteCattle } from '@/lib/permissions';
 import { useAuth } from '@/providers/auth-provider';
-import { useLocale } from '@/providers/locale-provider';
 
 function todayInput() {
   return new Date().toISOString().slice(0, 10);
 }
 
 export default function NewCattleScreen() {
-  const { t } = useLocale();
+  const { c, lang } = useM();
   const { user, organization } = useAuth();
   const queryClient = useQueryClient();
   const allowed = canWriteCattle(user?.role);
@@ -55,8 +50,7 @@ export default function NewCattleScreen() {
   const purpose = animalPurposeForFarm(logic, animalLogic);
   const fattening = purpose === 'beef';
 
-  const hint =
-    logic === 'beef' ? t('addAnimalHintFatten') : logic === 'mixed' ? t('addAnimalHintBoth') : t('addAnimalHintDairy');
+  const hint = logic === 'beef' ? c.addAnimalHintFatten : logic === 'mixed' ? c.addAnimalHintBoth : c.addAnimalHintDairy;
 
   const createMutation = useMutation({
     mutationFn: domainApi.createCow,
@@ -72,33 +66,33 @@ export default function NewCattleScreen() {
   const onSubmit = () => {
     setError('');
     if (!allowed) {
-      setError(t('noPermissionCattle'));
+      setError(c.noPermissionCattle);
       return;
     }
     if (!selectedFarmId) {
-      setError(t('selectFarm'));
+      setError(c.selectFarm);
       return;
     }
     if (!animalId.trim()) {
-      setError(t('tagRequired'));
+      setError(c.tagRequired);
       return;
     }
     if (!breed.trim()) {
-      setError(t('breedRequired'));
+      setError(c.breedRequired);
       return;
     }
     const weight = Number(entryWeight);
     if (fattening && (!Number.isFinite(weight) || weight <= 0)) {
-      setError(t('weightRequired'));
+      setError(c.weightRequired);
       return;
     }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(purchaseDate)) {
-      setError(t('dateFormat'));
+      setError(c.dateFormat);
       return;
     }
     const price = purchasePrice.trim() === '' ? undefined : Number(purchasePrice);
     if (price != null && (!Number.isFinite(price) || price < 0)) {
-      setError(t('priceInvalid'));
+      setError(c.priceInvalid);
       return;
     }
 
@@ -115,118 +109,96 @@ export default function NewCattleScreen() {
     });
   };
 
+  const header = <NavHeader title={c.addAnimal} />;
+
   if (!allowed) {
     return (
-      <Screen>
-        <FormBackHeader title={t('addAnimalTitle')} onBack={() => router.back()} />
-        <AppText variant="body">{t('noPermissionCattle')}</AppText>
-      </Screen>
+      <MScreen header={header}>
+        <EmptyCard icon="lock" title={c.noPermissionCattle} />
+      </MScreen>
     );
   }
 
   return (
-    <Screen>
-      <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <FormBackHeader title={t('addAnimalTitle')} onBack={() => router.back()} />
-        <AppText variant="caption" className="mb-5">
-          {hint}
-        </AppText>
+    <MScreen header={header} gap={18}>
+      <View>
+        <Tx s={28} w="800" style={{ letterSpacing: -0.8, lineHeight: 34 }}>{c.addAnimalTitle}</Tx>
+        <Tx s={14} w="500" color={C.sub} style={{ marginTop: 6 }}>{hint}</Tx>
+      </View>
 
-        <ScrollView
-          contentContainerClassName="gap-4 pb-12"
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}>
-          <OptionChips
-            label={t('farm')}
-            value={selectedFarmId}
-            options={cattleFarms.map((farm) => ({ value: farm._id, label: farm.name }))}
-            onChange={setFarmId}
-          />
+      <MSelect
+        label={c.farm}
+        title={c.farm}
+        icon="barn"
+        value={selectedFarmId}
+        placeholder={c.selectFarm}
+        options={cattleFarms.map((f) => ({ value: f._id, label: [f.name, f.district].filter(Boolean).join(' · '), icon: 'barn' as const }))}
+        onChange={setFarmId}
+      />
 
-          {logic === 'mixed' ? (
-            <OptionChips
-              label={t('animalLogic')}
-              value={animalLogic}
-              options={[
-                { value: 'dairy', label: t('dairyAnimal') },
-                { value: 'beef', label: t('fattenAnimal') },
-              ]}
-              onChange={(value) => {
-                const next = value === 'beef' ? 'beef' : 'dairy';
-                setAnimalLogic(next);
-                setGender(next === 'beef' ? 'male' : 'female');
-              }}
-            />
-          ) : (
-            <AppText variant="caption">{t('purposeLocked')}</AppText>
-          )}
-
-          <TextField
-            label={t('animalTag')}
-            value={animalId}
-            onChangeText={setAnimalId}
-            placeholder={fattening ? 'B-12' : 'C-04'}
-            autoCapitalize="characters"
-          />
-          <TextField
-            label={t('breed')}
-            value={breed}
-            onChangeText={setBreed}
-            placeholder={fattening ? 'Local cross' : 'Holstein cross'}
-          />
-          <OptionChips
-            label={t('gender')}
-            value={gender}
+      {logic === 'mixed' ? (
+        <View>
+          <FieldLabel label={c.animalLogic} />
+          <MSegmented
+            value={animalLogic}
             options={[
-              { value: 'female', label: t('female') },
-              { value: 'male', label: t('male') },
+              { key: 'dairy', label: c.dairyAnimal },
+              { key: 'beef', label: c.fattenAnimal },
             ]}
-            onChange={(value) => setGender(value === 'male' ? 'male' : 'female')}
+            onChange={(next) => {
+              setAnimalLogic(next);
+              setGender(next === 'beef' ? 'male' : 'female');
+            }}
           />
+        </View>
+      ) : (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: C.mint, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12 }}>
+          <Icon name="lock" size={15} color={C.padma} />
+          <Tx s={13} w="600" color={C.padma} style={{ flex: 1 }}>{`${fattening ? c.fattenAnimal : c.dairyAnimal} · ${c.purposeLocked}`}</Tx>
+        </View>
+      )}
 
-          {fattening ? (
-            <TextField
-              label={t('entryWeight')}
-              value={entryWeight}
-              onChangeText={setEntryWeight}
-              keyboardType="decimal-pad"
-              placeholder="180"
-            />
-          ) : null}
+      <View style={{ flexDirection: 'row', gap: 12 }}>
+        <MField label={c.animalTag} icon="tag" value={animalId} onChangeText={setAnimalId} placeholder={fattening ? 'B-12' : 'C-04'} autoCapitalize="none" style={{ flex: 1 }} />
+        <MField label={c.breed} value={breed} onChangeText={setBreed} placeholder={fattening ? 'Local cross' : 'Holstein cross'} style={{ flex: 1 }} />
+      </View>
 
-          <View className="flex-row gap-3">
-            <TextField
-              label={t('purchaseDate')}
-              value={purchaseDate}
-              onChangeText={setPurchaseDate}
-              autoCapitalize="none"
-              className="flex-1"
-            />
-            <TextField
-              label={t('purchasePrice')}
-              value={purchasePrice}
-              onChangeText={setPurchasePrice}
-              keyboardType="decimal-pad"
-              placeholder="85000"
-              className="flex-1"
-            />
-          </View>
+      <View>
+        <FieldLabel label={c.gender} />
+        <CheckChips
+          value={gender}
+          options={[
+            { key: 'female', label: c.female },
+            { key: 'male', label: c.male },
+          ]}
+          onChange={setGender}
+        />
+      </View>
 
-          {purchasePrice.trim() ? (
-            <AppText variant="subtitle" className="text-padma">
-              {t('purchasePrice')}: {formatBdt(Number(purchasePrice) || 0)}
-            </AppText>
-          ) : null}
+      {fattening ? <MField label={c.entryWeight} icon="scale" value={entryWeight} onChangeText={setEntryWeight} keyboardType="decimal-pad" placeholder="180" suffix="kg" /> : null}
 
-          {error ? (
-            <AppText variant="caption" className="text-danger">
-              {error}
-            </AppText>
-          ) : null}
+      <View style={{ flexDirection: 'row', gap: 12 }}>
+        <MDateField
+          label={c.purchaseDate}
+          value={purchaseDate}
+          onChange={setPurchaseDate}
+          format={(iso) => fullDate(iso, lang)}
+          labels={{ today: c.today, yesterday: c.yesterday, daysAgo: c.daysAgo, exact: c.exactDate }}
+          style={{ flex: 1 }}
+        />
+        <MField label={c.purchasePrice} optional={c.optional} prefix="৳" value={purchasePrice} onChangeText={setPurchasePrice} keyboardType="decimal-pad" placeholder="85000" style={{ flex: 1 }} />
+      </View>
 
-          <Button title={t('createAnimal')} onPress={onSubmit} loading={createMutation.isPending} className="mt-2" />
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </Screen>
+      {purchasePrice.trim() ? (
+        <View style={{ backgroundColor: C.limeSoft, borderWidth: 1, borderColor: '#A9D35A', borderRadius: 22, padding: 19 }}>
+          <Tx s={13} w="700" color={C.padma}>{c.purchasePrice}</Tx>
+          <Tx s={30} w="800" tabular style={{ letterSpacing: -1, marginTop: 6 }}>{bdt(Number(purchasePrice) || 0)}</Tx>
+        </View>
+      ) : null}
+
+      <Notice message={error} />
+
+      <MButton label={c.createAnimal} icon="check" kind="dark" onPress={onSubmit} loading={createMutation.isPending} />
+    </MScreen>
   );
 }

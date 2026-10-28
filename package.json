@@ -46,9 +46,14 @@
   "scripts": {
     "start": "expo start",
     "reset-project": "node ./scripts/reset-project.js",
-    "android": "expo start --android",
+    "web": "expo start --web --port 8081",
+    "native": "EXPO_PUBLIC_APP_TARGET=native expo start --lan --go --port 8082",
+    "native:emulator": "EXPO_PUBLIC_APP_TARGET=native expo start --lan --go --android --port 8082",
+    "native:usb": "EXPO_PUBLIC_APP_TARGET=native expo run:android --port 8082",
+    "android": "npm run native:emulator",
+    "mobile": "npm run native",
+    "apk": "node ./scripts/build-apk.mjs",
     "ios": "expo start --ios",
-    "web": "expo start --web",
     "lint": "expo lint"
   },
   "private": true

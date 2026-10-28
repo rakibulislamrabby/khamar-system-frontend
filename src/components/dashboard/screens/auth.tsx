@@ -8,6 +8,7 @@ import { Btn, ErrorNote, Field, Select, Tx } from '@/components/dashboard/kit';
 import { useDash, useWebFonts } from '@/components/dashboard/shell';
 import { C } from '@/components/dashboard/theme';
 import { Contours, LogoMark } from '@/components/web-landing/graphics';
+import type { CattleLogic } from '@/lib/cattle';
 import { useAuth } from '@/providers/auth-provider';
 import { useLocale } from '@/providers/locale-provider';
 import type { FarmType } from '@/types/api';
@@ -212,13 +213,48 @@ function TypeCard({ active, icon, title, sub, onPress }: { active: boolean; icon
   );
 }
 
+function LogicOption({ active, icon, title, sub, onPress }: { active: boolean; icon: IconName; title: string; sub: string; onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="radio"
+      accessibilityState={{ checked: active }}
+      style={({ hovered }: { hovered?: boolean }) => ({
+        flex: 1,
+        minWidth: 0,
+        borderRadius: 14,
+        borderWidth: 1.5,
+        borderColor: active ? C.emerald : hovered ? '#C9D6CE' : C.line,
+        backgroundColor: active ? C.mint : C.white,
+        paddingHorizontal: 12,
+        paddingVertical: 11,
+        gap: 8,
+      })}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Icon name={icon} size={16} color={active ? C.padma : C.sub} />
+        {active ? (
+          <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: C.emerald, alignItems: 'center', justifyContent: 'center' }}>
+            <Icon name="check" size={10} color={C.white} sw={3} />
+          </View>
+        ) : (
+          <View style={{ width: 16, height: 16, borderRadius: 8, borderWidth: 1.5, borderColor: '#C9D6CE' }} />
+        )}
+      </View>
+      <View>
+        <Tx s={13} w="800" lines={1} color={active ? C.forest : C.ink}>{title}</Tx>
+        <Tx s={11} color={C.sub} lines={2} style={{ lineHeight: 15 }}>{sub}</Tx>
+      </View>
+    </Pressable>
+  );
+}
+
 export function WebRegister() {
   const { c } = useDash();
   const router = useRouter();
   const { register } = useAuth();
   const [step, setStep] = useState<1 | 2>(1);
   const [acc, setAcc] = useState({ name: '', email: '', phone: '', password: '' });
-  const [farm, setFarm] = useState<{ name: string; type: FarmType; district: string; upazila: string }>({ name: '', type: 'poultry', district: '', upazila: '' });
+  const [farm, setFarm] = useState<{ name: string; type: FarmType; logic: CattleLogic | null; district: string; upazila: string }>({ name: '', type: 'poultry', logic: null, district: '', upazila: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -232,6 +268,7 @@ export function WebRegister() {
   const submit = async () => {
     setError('');
     if (farm.name.trim().length < 2) return setError(c.fillFarm);
+    if (farm.type === 'cow' && !farm.logic) return setError(c.pickCattleLogic);
     setLoading(true);
     try {
       const email = acc.email.trim().toLowerCase();
@@ -246,6 +283,8 @@ export function WebRegister() {
           phone: acc.phone.trim(),
           email,
           farmType: farm.type,
+          poultryPurpose: farm.type === 'poultry' ? 'mixed' : undefined,
+          cowPurpose: farm.type === 'cow' ? farm.logic ?? undefined : undefined,
           district: farm.district || undefined,
           upazila: farm.upazila.trim() || undefined,
         },
@@ -282,9 +321,25 @@ export function WebRegister() {
               <Tx s={13} w="600" style={{ marginBottom: 8 }}>{c.farmType}</Tx>
               <View style={{ flexDirection: 'row', gap: 12 }}>
                 <TypeCard active={farm.type === 'poultry'} icon="bird" title={c.poultry} sub={c.poultrySub} onPress={() => setFarm((p) => ({ ...p, type: 'poultry' }))} />
-                <TypeCard active={farm.type === 'cow'} icon="milk" title={c.dairyCow} sub={c.dairySub} onPress={() => setFarm((p) => ({ ...p, type: 'cow' }))} />
+                <TypeCard active={farm.type === 'cow'} icon="milk" title={c.cattle} sub={c.cattleSub} onPress={() => setFarm((p) => ({ ...p, type: 'cow' }))} />
               </View>
             </View>
+            {farm.type === 'cow' ? (
+              <View accessibilityRole="radiogroup">
+                <Tx s={13} w="600" style={{ marginBottom: 8 }}>{c.cattleLogic}</Tx>
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  {(
+                    [
+                      ['dairy', 'milk', c.logicDairy, c.logicDairySub],
+                      ['beef', 'scale', c.logicBeef, c.logicBeefSub],
+                      ['mixed', 'layers', c.logicMixed, c.logicMixedSub],
+                    ] as const
+                  ).map(([key, icon, title, sub]) => (
+                    <LogicOption key={key} active={farm.logic === key} icon={icon} title={title} sub={sub} onPress={() => { setError(''); setFarm((p) => ({ ...p, logic: key })); }} />
+                  ))}
+                </View>
+              </View>
+            ) : null}
             <View style={{ flexDirection: 'row', gap: 12 }}>
               <Select label={c.district} icon="pin" value={farm.district} onChange={(v) => setFarm((p) => ({ ...p, district: v }))} options={DISTRICTS.map((d) => ({ value: d, label: d }))} placeholder={c.selectDistrict} style={{ flex: 1 }} />
               <Field label={c.upazila} value={farm.upazila} onChangeText={(v) => setFarm((p) => ({ ...p, upazila: v }))} placeholder="Sreepur" style={{ flex: 1 }} onSubmitEditing={submit} />

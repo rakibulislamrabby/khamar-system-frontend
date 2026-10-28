@@ -1,3 +1,5 @@
+import { Platform } from 'react-native';
+
 import { C as LANDING } from '@/components/web-landing/theme';
 
 /** Field Ledger tokens (Figma "00 · Cover & design system") plus dashboard-only ink shades. */
@@ -11,7 +13,8 @@ export const C = {
   overlay: 'rgba(8, 26, 19, 0.46)',
 } as const;
 
-export const FONT = 'Inter, "Noto Sans Bengali", ui-sans-serif, system-ui, sans-serif';
+/** CSS font stacks only work on the web; Android uses the system font. */
+export const FONT = Platform.OS === 'web' ? 'Inter, "Noto Sans Bengali", ui-sans-serif, system-ui, sans-serif' : undefined;
 
 export const SIDEBAR_W = 264;
 export const TOPBAR_H = 84;

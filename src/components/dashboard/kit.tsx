@@ -10,6 +10,7 @@ import {
 } from 'react';
 import {
   ActivityIndicator,
+  Dimensions,
   Modal,
   Pressable,
   ScrollView,
@@ -469,8 +470,7 @@ export function Popover({
   }, []);
   const close = useCallback(() => setAnchor(null), []);
   const panelW = width ?? anchor?.w ?? 220;
-  const vw = typeof window !== 'undefined' ? window.innerWidth : 1440;
-  const vh = typeof window !== 'undefined' ? window.innerHeight : 900;
+  const { width: vw, height: vh } = Dimensions.get('window');
   const left = anchor ? Math.max(8, Math.min(vw - panelW - 8, align === 'right' ? anchor.x + anchor.w - panelW : anchor.x)) : 0;
   const top = anchor ? anchor.y + anchor.h + 6 : 0;
   return (
@@ -768,7 +768,7 @@ export function ErrorNote({ message }: { message?: string | null }) {
 type ToastItem = { id: number; text: string; tone: 'ok' | 'err' };
 const ToastCtx = createContext<(text: string, tone?: 'ok' | 'err') => void>(() => {});
 
-export function ToastProvider({ children }: PropsWithChildren) {
+export function ToastProvider({ children, position }: PropsWithChildren<{ position?: ViewStyle }>) {
   const [items, setItems] = useState<ToastItem[]>([]);
   const push = useCallback((text: string, tone: 'ok' | 'err' = 'ok') => {
     const id = Date.now() + Math.random();
@@ -779,7 +779,7 @@ export function ToastProvider({ children }: PropsWithChildren) {
   return (
     <ToastCtx.Provider value={value}>
       {children}
-      <View pointerEvents="none" style={{ position: 'absolute', right: 28, bottom: 28, gap: 10, zIndex: 100 }}>
+      <View pointerEvents="none" style={[{ position: 'absolute', right: 28, bottom: 28, gap: 10, zIndex: 100 }, position]}>
         {items.map((t) => (
           <View
             key={t.id}

@@ -246,6 +246,10 @@ export const domainApi = {
     const { data } = await api.get<ApiPaginated<EggRecord>>('/poultry/eggs', { params: { limit: 100 } });
     return data.data;
   },
+  recordEggs: async (payload: { farmId: string; batchId?: string; productionDate: string; activeBirds: number; totalEggs: number; brokenEggs?: number }) => {
+    const { data } = await api.post<ApiSuccess<EggRecord>>('/poultry/eggs', payload);
+    return data.data;
+  },
   recentMilk: async () => {
     const { data } = await api.get<ApiPaginated<MilkRecord>>('/cows/milk', { params: { limit: 100 } });
     return data.data;

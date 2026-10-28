@@ -8,10 +8,11 @@ import {
 } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
-import { useColorScheme } from 'react-native';
+import { useEffect, type ReactNode } from 'react';
+import { Platform, useColorScheme, View } from 'react-native';
 
 import { Colors, Palette } from '@/constants/theme';
+import { isMobileApp } from '@/lib/app-target';
 import { AuthProvider, useAuth } from '@/providers/auth-provider';
 import { LocaleProvider } from '@/providers/locale-provider';
 import { QueryProvider } from '@/providers/query-provider';
@@ -74,12 +75,23 @@ function RootNavigator() {
   );
 }
 
+function PhoneFrame({ children }: { children: ReactNode }) {
+  if (Platform.OS !== 'web' || !isMobileApp) return children;
+  return (
+    <View style={{ flex: 1, alignItems: 'center', backgroundColor: '#DDE5E0' }}>
+      <View style={{ flex: 1, width: '100%', maxWidth: 430, overflow: 'hidden', boxShadow: '0 0 40px rgba(0, 0, 0, 0.12)' }}>{children}</View>
+    </View>
+  );
+}
+
 export default function RootLayout() {
   return (
     <QueryProvider>
       <LocaleProvider>
         <AuthProvider>
-          <RootNavigator />
+          <PhoneFrame>
+            <RootNavigator />
+          </PhoneFrame>
         </AuthProvider>
       </LocaleProvider>
     </QueryProvider>

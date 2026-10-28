@@ -2,39 +2,47 @@ import { useDesktopWeb, WebLivestock } from '@/components/dashboard';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 
 import { domainApi, organizationApi } from '@/api';
 import { getApiErrorMessage } from '@/api/client';
+import { bdt, fullDate, num } from '@/components/dashboard/format';
+import { Icon } from '@/components/dashboard/icons';
+import { C } from '@/components/dashboard/theme';
+import { useM } from '@/components/mobile/copy';
 import {
-  AppText,
-  Button,
-  FormBackHeader,
-  OptionChips,
-  Screen,
-  TextField,
-} from '@/components/ui/primitives';
-import { formatBdt } from '@/lib/format';
+  CheckChips,
+  EmptyCard,
+  FieldLabel,
+  MButton,
+  MDateField,
+  MField,
+  MScreen,
+  MSelect,
+  NavHeader,
+  Notice,
+  Stepper,
+  Tx,
+} from '@/components/mobile/kit';
 import { canWritePoultry } from '@/lib/permissions';
 import { useAuth } from '@/providers/auth-provider';
-import { useLocale } from '@/providers/locale-provider';
 
 function todayInput() {
   return new Date().toISOString().slice(0, 10);
 }
 
 function NewPoultryBatchScreen() {
-  const { t } = useLocale();
+  const { c, lang } = useM();
   const { user, organization } = useAuth();
   const queryClient = useQueryClient();
   const allowed = canWritePoultry(user?.role);
 
   const birdTypes = [
-    { value: 'broiler', label: t('broiler') },
-    { value: 'layer', label: t('layer') },
-    { value: 'sonali', label: t('sonali') },
-    { value: 'duck', label: t('duck') },
-    { value: 'mixed', label: t('mixed') },
+    { key: 'broiler', label: c.broiler },
+    { key: 'layer', label: c.layer },
+    { key: 'sonali', label: c.sonali },
+    { key: 'duck', label: c.duck },
+    { key: 'mixed', label: c.mixed },
   ];
 
   const farmsQuery = useQuery({
@@ -82,33 +90,29 @@ function NewPoultryBatchScreen() {
   const onSubmit = () => {
     setError('');
     if (!allowed) {
-      setError(t('noPermissionBatch'));
+      setError(c.noPermissionBatch);
       return;
     }
     if (!selectedFarmId) {
-      setError(t('selectFarm'));
+      setError(c.selectFarm);
       return;
     }
     if (!batchName.trim()) {
-      setError(t('enterBatchName'));
-      return;
-    }
-    if (!birdType) {
-      setError(t('selectBirdType'));
+      setError(c.enterBatchName);
       return;
     }
     const qty = Number(initialQuantity);
     if (!Number.isFinite(qty) || qty <= 0) {
-      setError(t('qtyPositive'));
+      setError(c.qtyPositive);
       return;
     }
     const price = Number(unitPrice);
     if (!Number.isFinite(price) || price < 0 || unitPrice.trim() === '') {
-      setError(t('priceRequired'));
+      setError(c.priceRequired);
       return;
     }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(purchaseDate)) {
-      setError(t('dateFormat'));
+      setError(c.dateFormat);
       return;
     }
 
@@ -122,92 +126,71 @@ function NewPoultryBatchScreen() {
     });
   };
 
+  const header = <NavHeader title={c.newBatch} />;
+
   if (!allowed) {
     return (
-      <Screen>
-        <FormBackHeader title={t('addBatchTitle')} onBack={() => router.back()} />
-        <AppText variant="body">{t('noPermissionBatch')}</AppText>
-      </Screen>
+      <MScreen header={header}>
+        <EmptyCard icon="lock" title={c.noPermissionBatch} />
+      </MScreen>
     );
   }
 
+  const now = new Date();
+  const namePlaceholder = `Batch-${now.toLocaleString('en', { month: 'short' })}-${now.getFullYear()}`;
+
   return (
-    <Screen>
-      <KeyboardAvoidingView
-        className="flex-1"
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <FormBackHeader title={t('addBatchTitle')} onBack={() => router.back()} />
-        <AppText variant="caption" className="mb-5">
-          {t('addBatchHint')} ({organization?.name})
-        </AppText>
+    <MScreen header={header} gap={18}>
+      <View>
+        <Tx s={28} w="800" style={{ letterSpacing: -0.8, lineHeight: 34 }}>{c.placeFlock}</Tx>
+        <Tx s={14} w="500" color={C.sub} style={{ marginTop: 6 }}>{c.chickCostSaved}</Tx>
+      </View>
 
-        <ScrollView
-          contentContainerClassName="gap-4 pb-12"
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}>
-          <OptionChips
-            label={t('farm')}
-            value={selectedFarmId}
-            options={poultryFarms.map((f) => ({ value: f._id, label: f.name }))}
-            onChange={setFarmId}
-          />
+      <MSelect
+        label={c.farm}
+        title={c.farm}
+        icon="barn"
+        value={selectedFarmId}
+        placeholder={c.selectFarm}
+        options={poultryFarms.map((f) => ({ value: f._id, label: [f.name, f.district].filter(Boolean).join(' · '), icon: 'barn' as const }))}
+        onChange={setFarmId}
+      />
 
-          <TextField
-            label={t('batchName')}
-            value={batchName}
-            onChangeText={setBatchName}
-            placeholder="Batch-Mar-2026"
-          />
+      <MField label={c.batchName} icon="pencil" value={batchName} onChangeText={setBatchName} placeholder={namePlaceholder} />
 
-          <OptionChips
-            label={t('birdType')}
-            value={birdType}
-            options={birdTypes}
-            onChange={setBirdType}
-          />
+      <View>
+        <FieldLabel label={c.birdType} />
+        <CheckChips value={birdType} options={birdTypes} onChange={setBirdType} />
+      </View>
 
-          <TextField
-            label={t('purchaseDate')}
-            value={purchaseDate}
-            onChangeText={setPurchaseDate}
-            placeholder="2026-03-15"
-            autoCapitalize="none"
-          />
+      <View style={{ flexDirection: 'row', gap: 12 }}>
+        <Stepper label={c.initialQty} value={initialQuantity} onChange={setInitialQuantity} step={100} style={{ flex: 1 }} />
+        <MField label={c.pricePerChick} prefix="৳" value={unitPrice} onChangeText={setUnitPrice} keyboardType="decimal-pad" placeholder="45" style={{ flex: 1 }} />
+      </View>
 
-          <View className="flex-row gap-3">
-            <TextField
-              label={t('initialQuantity')}
-              value={initialQuantity}
-              onChangeText={setInitialQuantity}
-              keyboardType="number-pad"
-              placeholder="1000"
-              className="flex-1"
-            />
-            <TextField
-              label={t('pricePerChick')}
-              value={unitPrice}
-              onChangeText={setUnitPrice}
-              keyboardType="decimal-pad"
-              placeholder="45"
-              className="flex-1"
-            />
-          </View>
+      <MDateField
+        label={c.purchaseDate}
+        value={purchaseDate}
+        onChange={setPurchaseDate}
+        format={(iso) => fullDate(iso, lang)}
+        labels={{ today: c.today, yesterday: c.yesterday, daysAgo: c.daysAgo, exact: c.exactDate }}
+      />
 
-          <AppText variant="subtitle" className="text-padma">
-            {t('chickPurchaseTotal')}: {formatBdt(chickTotal)}
-          </AppText>
+      <View style={{ backgroundColor: C.limeSoft, borderWidth: 1, borderColor: '#A9D35A', borderRadius: 22, padding: 19, marginTop: 4 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Tx s={13} w="700" color={C.padma}>{c.chickTotal}</Tx>
+          <Icon name="receipt" size={18} color={C.padma} />
+        </View>
+        <Tx s={30} w="800" tabular style={{ letterSpacing: -1, marginTop: 6 }}>{bdt(chickTotal)}</Tx>
+        <Tx s={12} w="500" color={C.sub} style={{ marginTop: 2 }}>
+          {c.chickTotalSub(num(Number(initialQuantity) || 0), bdt(Number(unitPrice) || 0))}
+        </Tx>
+      </View>
 
-          {error ? <AppText variant="caption" className="text-danger">{error}</AppText> : null}
+      <Notice message={error} />
 
-          <Button
-            title={t('createBatch')}
-            onPress={onSubmit}
-            loading={createMutation.isPending}
-            className="mt-2"
-          />
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </Screen>
+      <MButton label={c.createBatch} icon="check" kind="dark" onPress={onSubmit} loading={createMutation.isPending} />
+    </MScreen>
   );
 }
 

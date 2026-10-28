@@ -10,7 +10,7 @@ import { batchTitle, useCategories, useFarms, useItems, useRefreshAll, useSheds 
 import { bdt, isoDay, num } from '@/components/dashboard/format';
 import { Icon, type IconName } from '@/components/dashboard/icons';
 import { Btn, Chips, Drawer, ErrorNote, Field, IconTile, Segmented, Select, Tx, useToast } from '@/components/dashboard/kit';
-import { useDash } from '@/components/dashboard/shell';
+import { useDash } from '@/components/dashboard/use-dash';
 import { C, type Tone } from '@/components/dashboard/theme';
 import { resolveId } from '@/lib/ids';
 import type { Customer, Farm, InventoryItem, PoultryBatch, UserRole } from '@/types/api';

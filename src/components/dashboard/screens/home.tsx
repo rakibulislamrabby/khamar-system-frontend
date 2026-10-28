@@ -39,6 +39,7 @@ import { Btn, Card, CardHead, Cell, Delta, Empty, IconTile, MenuItem, Pill, Popo
 import { HerdTable } from '@/components/dashboard/screens/livestock';
 import { Page, PageTop, Row, useContentWidth, useDash } from '@/components/dashboard/shell';
 import { C, TONES, type Tone } from '@/components/dashboard/theme';
+import { cattleLogic, isFatteningAnimal, weightGain } from '@/lib/cattle';
 import { useAuth } from '@/providers/auth-provider';
 
 type Range = 'this' | 'last' | 'year';
@@ -114,7 +115,7 @@ export function WebHome() {
               <View style={{ paddingVertical: 6 }}>
                 <MenuItem icon="cash" tone="green" label={c.recordSale} onPress={() => { close(); router.navigate('/(app)/sell'); }} />
                 {!isCow ? <MenuItem icon="bird" tone="lime" label={c.newBatch} onPress={() => { close(); setNewBatch(true); }} /> : null}
-                {isCow ? <MenuItem icon="milk" tone="sky" label={c.registerCow} onPress={() => { close(); router.navigate('/(app)/cattle/new'); }} /> : null}
+                {isCow ? <MenuItem icon={organization?.cowPurpose === 'beef' ? 'scale' : 'milk'} tone="sky" label={organization?.cowPurpose === 'dairy' ? c.registerCow : c.registerAnimal} onPress={() => { close(); router.navigate('/(app)/cattle/new'); }} /> : null}
                 <MenuItem icon="box" tone="gold" label={c.stockIn} onPress={() => { close(); router.navigate({ pathname: '/(app)/inventory', params: { action: 'in' } }); }} />
                 <MenuItem icon="userPlus" tone="violet" label={c.addCustomer} onPress={() => { close(); router.navigate({ pathname: '/(app)/customers', params: { action: 'new' } }); }} />
               </View>
@@ -345,6 +346,8 @@ function KpiCard({
 
 function TodayCard() {
   const { c, lang } = useDash();
+  const { organization } = useAuth();
+  const logic = organization?.farmType === 'cow' ? cattleLogic(organization.cowPurpose) : null;
   const dash = useDashboard();
   const batchesQ = useBatches();
   const itemsQ = useItems();
@@ -366,12 +369,24 @@ function TodayCard() {
   const feedUnit = feed[0]?.unit ?? 'bags';
   const today = new Date();
 
-  const rows: Array<{ icon: IconName; tone: Tone; label: string; value: string; sub: string; pct: number; color: string; track: string }> = [
-    { icon: 'egg', tone: 'gold', label: c.eggsCollected, value: num(eggs), sub: layerBirds ? c.layRate(pct(layRate, 0)) : c.noLayers, pct: layRate, color: C.gold, track: C.goldSoft },
-    { icon: 'milk', tone: 'sky', label: c.milk, value: `${num(d?.dairy.todayMilkProduction ?? 0, 1)} L`, sub: c.cowsLactating(lact), pct: totalCows ? (lact / totalCows) * 100 : 0, color: C.sky, track: C.skySoft },
-    { icon: 'alert', tone: 'coral', label: c.deaths, value: num(deaths), sub: c.thisCycle(pct(avgMort)), pct: Math.min(100, avgMort * 10), color: C.coral, track: C.coralSoft },
-    { icon: 'wheat', tone: 'green', label: c.feedInStore, value: `${num(feedStock)} ${feedUnit}`, sub: feed.length ? c.itemsLow(feedLow) : c.noFeedStock, pct: feedMin ? Math.min(100, (feedStock / (feedMin * 3)) * 100) : feedStock ? 70 : 0, color: C.emerald, track: C.mint },
-  ];
+  type TodayRow = { icon: IconName; tone: Tone; label: string; value: string; sub: string; pct: number; color: string; track: string };
+  const cows = cowsQ.data ?? [];
+  const fattening = d?.dairy.fatteningCattle ?? cows.filter((x) => isFatteningAnimal(x.purpose)).length;
+  const dairyCows = Math.max(0, totalCows - fattening);
+  const preg = d?.dairy.pregnantCows ?? 0;
+  const gains = cows.filter((x) => isFatteningAnimal(x.purpose)).map((x) => weightGain(x.entryWeight, x.currentWeight)).filter((g): g is number => g != null);
+  const avgGain = gains.length ? sum(gains, (g) => g) / gains.length : null;
+
+  const eggRow: TodayRow = { icon: 'egg', tone: 'gold', label: c.eggsCollected, value: num(eggs), sub: layerBirds ? c.layRate(pct(layRate, 0)) : c.noLayers, pct: layRate, color: C.gold, track: C.goldSoft };
+  const milkRow: TodayRow = { icon: 'milk', tone: 'sky', label: c.milk, value: `${num(d?.dairy.todayMilkProduction ?? 0, 1)} L`, sub: c.cowsLactating(lact), pct: dairyCows ? (lact / dairyCows) * 100 : 0, color: C.sky, track: C.skySoft };
+  const deathRow: TodayRow = { icon: 'alert', tone: 'coral', label: c.deaths, value: num(deaths), sub: c.thisCycle(pct(avgMort)), pct: Math.min(100, avgMort * 10), color: C.coral, track: C.coralSoft };
+  const feedRow: TodayRow = { icon: 'wheat', tone: 'green', label: c.feedInStore, value: `${num(feedStock)} ${feedUnit}`, sub: feed.length ? c.itemsLow(feedLow) : c.noFeedStock, pct: feedMin ? Math.min(100, (feedStock / (feedMin * 3)) * 100) : feedStock ? 70 : 0, color: C.emerald, track: C.mint };
+  const pregRow: TodayRow = { icon: 'pulse', tone: 'violet', label: c.pregnantCows, value: num(preg), sub: c.herdSub(dairyCows), pct: dairyCows ? (preg / dairyCows) * 100 : 0, color: C.violet, track: C.violetSoft };
+  const weightRow: TodayRow = { icon: 'scale', tone: 'gold', label: c.avgWeightHerd, value: d?.dairy.averageWeight ? `${num(d.dairy.averageWeight)} kg` : '—', sub: c.animalsSub(fattening), pct: totalCows ? (fattening / totalCows) * 100 : 0, color: C.gold, track: C.goldSoft };
+  const gainRow: TodayRow = { icon: 'up', tone: 'green', label: c.avgGain, value: avgGain != null ? `${avgGain >= 0 ? '+' : ''}${num(avgGain, 1)} kg` : '—', sub: avgGain != null ? c.animalsSub(gains.length) : c.noGainYet, pct: gains.length && fattening ? (gains.length / fattening) * 100 : 0, color: C.emerald, track: C.mint };
+
+  const rows: TodayRow[] =
+    logic === 'dairy' ? [milkRow, pregRow, feedRow] : logic === 'beef' ? [weightRow, gainRow, feedRow] : logic === 'mixed' ? [milkRow, weightRow, gainRow, feedRow] : [eggRow, milkRow, deathRow, feedRow];
 
   return (
     <Card style={{ flex: 1, minWidth: 300 }}>
